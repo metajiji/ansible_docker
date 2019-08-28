@@ -1,0 +1,27 @@
+---
+
+# https://docs.docker.com/install/linux/docker-ce/centos/
+docker_required_packages: []
+#  - device-mapper-persistent-data
+#  - lvm2
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+
+docker_repo_file: docker-ce.repo
+docker_repo_url: "https://download.docker.com/linux/centos/{{ docker_repo_file }}"
+docker_repo_name: docker-ce-stable
+
+# https://docs.docker.com/engine/reference/commandline/dockerd/
+docker_daemon_json:
+  features:
+    buildkit: true
+  log-driver: json-file  # https://docs.docker.com/config/containers/logging/json-file/
+  log-opts:
+    max-size: 10m
+    max-file: "5"
+  max-concurrent-downloads: 3
+  max-concurrent-uploads: 5
+  live-restore: true

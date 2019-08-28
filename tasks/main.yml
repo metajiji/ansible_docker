@@ -1,0 +1,71 @@
+---
+- name: Install required packages
+  become: true
+  yum:
+    state: present
+    name: "{{ docker_required_packages }}"
+  tags:
+    - install
+
+- name: Download repo file
+  become: true
+  get_url:
+    url: "{{ docker_repo_url }}"
+    dest: "/etc/yum.repos.d/{{ docker_repo_file }}"
+    mode: 0644
+    owner: root
+    group: root
+  tags:
+    - install
+
+- name: Enable {{ docker_repo_name }} repo
+  become: true
+  ini_file:
+    dest: "/etc/yum.repos.d/{{ docker_repo_file }}"
+    section: "{{ docker_repo_name }}"
+    option: enabled
+    value: 1
+    no_extra_spaces: true
+  tags:
+    - install
+
+- name: Install packages
+  become: true
+  yum:
+    state: present
+    name: "{{ docker_packages }}"
+  tags:
+    - install
+
+- name: Ensure directroy /etc/docker is exists
+  become: true
+  file:
+    path: /etc/docker
+    state: directory
+    mode: 0700
+    owner: root
+    group: root
+  tags:
+    - configure
+
+- name: Configure dockerd
+  become: true
+  copy:
+    content: "{{ docker_daemon_json | to_nice_json }}\n"
+    dest: /etc/docker/daemon.json
+    mode: 0644
+    owner: root
+    group: root
+  notify: restart dockerd
+  tags:
+    - configure
+
+- name: Ensure docker services is started and enabled at boot
+  become: true
+  systemd:
+    name: docker
+    state: started
+    enabled: true
+  tags:
+    - install
+    - configure

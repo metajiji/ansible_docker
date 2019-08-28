@@ -1,0 +1,13 @@
+extends: relaxed
+
+ignore: |
+  venv/
+
+rules:
+  line-length: disable
+  braces:
+    max-spaces-inside: 1
+    level: error
+  brackets:
+    max-spaces-inside: 1
+    level: error

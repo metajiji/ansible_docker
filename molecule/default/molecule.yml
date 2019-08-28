@@ -1,0 +1,36 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint:
+  name: yamllint
+platforms:
+  - name: molecule-docker-${CI_JOB_ID:-1}
+    image: centos/systemd:latest
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+    command: /usr/sbin/init
+    stop_signal: "SIGRTMIN+3"
+    privileged: true
+    capabilities:
+      - SYS_ADMIN  # For systemd
+provisioner:
+  name: ansible
+  config_options:
+    defaults:
+      stdout_callback: debug
+      error_on_undefined_vars: true
+      callback_whitelist: profile_tasks
+    diff:
+      always: true
+  lint:
+    name: ansible-lint
+    options:
+      force-color: true
+verifier:
+  name: testinfra
+  lint:
+    name: flake8
+  options:
+    verbose: true
