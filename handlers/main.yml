@@ -1,7 +1,17 @@
 ---
 
-- name: restart dockerd
-  become: true
+- name: systemctl daemon-reload
   systemd:
+    daemon_reload: true
+
+- name: systemctl restart-docker
+  become: true
+  service:
     name: docker
+    state: restarted
+
+- name: systemctl restart-containerd
+  become: true
+  service:
+    name: containerd
     state: restarted

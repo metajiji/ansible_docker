@@ -1,18 +1,47 @@
 ---
 
+# Can be: static | package
+docker_installation_type: package
+
+docker_tarball_release: 19.03.8
+# Can be: aarch64 | armel | armhf | ppc64le | s390x | x86_64
+docker_tarball_arch: x86_64
+docker_tarball_url: "https://download.docker.com/linux/static/stable/{{ docker_tarball_arch }}/docker-{{ docker_tarball_release }}.tgz"
+
+docker_tarball_bash_completion_enabled: true
+docker_tarball_bash_completion_url: "https://github.com/docker/docker-ce/raw/v{{ docker_tarball_release }}/components/cli/contrib/completion/bash/docker"
+docker_tarball_bash_completion_packages:
+  - bash-completion
+
+# Will be symlinked from /opt/docker/ to /usr/local/bin/
+docker_tarball_binaries:
+  - containerd
+  - containerd-shim
+  - docker
+  - docker-init
+  - docker-proxy
+  - dockerd
+  - runc
+
+docker_package_repo_file: docker-ce.repo
+docker_package_repo_distribution: "{{ ansible_distribution | lower }}"
+docker_package_repo_url: "https://download.docker.com/linux/{{ docker_package_repo_distribution }}/{{ docker_package_repo_file }}"
+docker_package_repo_name: docker-ce-stable
+
 # https://docs.docker.com/install/linux/docker-ce/centos/
 docker_required_packages: []
 #  - device-mapper-persistent-data
 #  - lvm2
+docker_required_packages_extra: []
 
 docker_packages:
-  - docker-ce
-  - docker-ce-cli
-  - containerd.io
+  - iptables
+docker_packages_extra: []
 
-docker_repo_file: docker-ce.repo
-docker_repo_url: "https://download.docker.com/linux/centos/{{ docker_repo_file }}"
-docker_repo_name: docker-ce-stable
+docker_package_packages:
+  - docker-ce
+  # - docker-ce-cli
+  # - containerd.io
 
 # https://docs.docker.com/engine/reference/commandline/dockerd/
 docker_daemon_json:

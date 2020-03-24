@@ -1,0 +1,122 @@
+---
+
+- name: Download docker static binaries
+  become: false
+  run_once: true
+  get_url:
+    url: "{{ docker_tarball_url }}"
+    dest: "{{ playbook_dir }}/files/{{ docker_tarball_arch }}-{{ docker_tarball_url | basename }}"
+  delegate_to: localhost
+
+- name: Create a directory for docker if it does not exist
+  become: true
+  file:
+    path: /opt/docker
+    state: directory
+    mode: 0755
+
+- name: Check installed version
+  stat:
+    path: /opt/docker/INSTALLED.VERSION
+  register: _docker_installed_version
+
+- name: Read /opt/docker/INSTALLED.VERSION file
+  slurp:
+    src: /opt/docker/INSTALLED.VERSION
+  register: _docker_installed_version_string
+  when: _docker_installed_version.stat.exists
+
+- name: Download and install docker
+  become: true
+  block:
+    - name: Installing docker binaries
+      unarchive:
+        src: "{{ playbook_dir }}/files/{{ docker_tarball_arch }}-{{ docker_tarball_url | basename }}"
+        dest: /opt/docker
+        extra_opts:
+          - --strip-components=1
+
+    - name: Save /opt/docker/INSTALLED.VERSION file
+      copy:
+        content: "{{ docker_tarball_arch }}-{{ docker_tarball_release }}"
+        dest: /opt/docker/INSTALLED.VERSION
+  when: not _docker_installed_version.stat.exists
+        or ((_docker_installed_version_string.content | default('') | b64decode) != ('%s-%s' | format(docker_tarball_arch, docker_tarball_release)))
+
+- name: Create a /etc/containerd directory if it does not exist
+  become: true
+  file:
+    path: /etc/containerd
+    state: directory
+    mode: 0755
+
+- name: Create /etc/containerd/config.toml file
+  become: true
+  template:
+    dest: /etc/containerd/config.toml
+    src: etc/containerd/config.toml.j2
+    mode: 0644
+  notify:
+    - systemctl restart-containerd
+
+- name: Create containerd systemd service unit
+  become: true
+  template:
+    dest: /etc/systemd/system/containerd.service
+    src: etc/systemd/system/containerd.service.j2
+    mode: 0644
+  notify:
+    - systemctl daemon-reload
+    - systemctl restart-containerd
+
+- name: Create docker config files
+  become: true
+  template:
+    dest: "/{{ item }}"
+    src: "{{ item }}.j2"
+    mode: 0644
+  notify:
+    - systemctl daemon-reload
+    - systemctl restart-docker
+  loop:
+    - etc/systemd/system/docker.service
+    - etc/systemd/system/docker.socket
+
+- name: Ensure group "docker" exists
+  become: true
+  group:
+    name: docker
+    state: present
+    system: true
+
+- name: Ensure alternatives links is exists
+  become: true
+  alternatives:
+    name: "{{ item }}"
+    link: "/usr/local/bin/{{ item }}"
+    path: "/opt/docker/{{ item }}"
+  loop: "{{ docker_tarball_binaries }}"
+
+- name: Download and install docker bash-completion
+  become: true
+  block:
+    - name: Download docker bash-completion
+      become: false
+      run_once: true
+      get_url:
+        url: "{{ docker_tarball_bash_completion_url }}"
+        dest: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
+      delegate_to: localhost
+
+    - name: Copy docker bash-completion from ansible controller
+      # no_log: true
+      copy:
+        src: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
+        dest: /opt/docker/bash-completion
+
+    - name: Ensure alternatives links is exists for docker bash-completion
+      alternatives:
+        name: docker-bash-completion
+        link: /usr/share/bash-completion/completions/docker
+        path: /opt/docker/bash-completion
+  when: docker_tarball_bash_completion_enabled
