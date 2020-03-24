@@ -28,12 +28,9 @@
   tags:
     - configure
 
-- name: Ensure services is started and enabled at boot
+- name: Ensure docker is started and enabled at boot
   systemd:
-    name: "{{ item }}"
+    name: docker
     state: started
     enabled: true
     daemon_reload: true
-  loop:
-    # - containerd
-    - docker

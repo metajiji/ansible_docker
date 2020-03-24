@@ -42,8 +42,8 @@ Issues, feature requests, ideas are can be appreciated
 
 ## Contributors
 
-- your name
+- Denis Kadyshev
 
 ## Documentation
 
-# TODO
+## TODO
