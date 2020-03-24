@@ -1,10 +1,4 @@
 ---
-dependency:
-  name: galaxy
-driver:
-  name: docker
-lint:
-  name: yamllint
 platforms:
   - name: molecule-docker-el8-${CI_JOB_ID:-1}
     image: centos:8
@@ -23,6 +17,7 @@ provisioner:
     host_vars:
       molecule-docker-el8-${CI_JOB_ID:-1}:
         ansible_python_interpreter: /usr/bin/python3
+  log: true
   config_options:
     defaults:
       stdout_callback: debug
@@ -30,13 +25,16 @@ provisioner:
       callback_whitelist: profile_tasks
     diff:
       always: true
-  lint:
-    name: ansible-lint
-    options:
-      force-color: true
 verifier:
   name: testinfra
-  lint:
-    name: flake8
   options:
     verbose: true
+dependency:
+  name: galaxy
+driver:
+  name: docker
+lint: |
+  set -e
+  yamllint .
+  ansible-lint --force-color
+  flake8
