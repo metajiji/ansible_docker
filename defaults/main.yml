@@ -1,7 +1,7 @@
 ---
 
 # Can be: tarball | package
-docker_installation_type: tarball
+docker_installation_type: package
 
 docker_tarball_release: 19.03.8
 # Can be: aarch64 | armel | armhf | ppc64le | s390x | x86_64
