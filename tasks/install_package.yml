@@ -17,7 +17,7 @@
     dest: "/etc/yum.repos.d/{{ docker_package_repo_file }}"
     section: "{{ docker_package_repo_name }}"
     option: enabled
-    value: 1
+    value: "True"
     no_extra_spaces: true
   tags:
     - install
@@ -32,7 +32,7 @@
     dest: "/etc/yum.repos.d/{{ docker_package_repo_file }}"
     section: "{{ docker_package_repo_name }}"
     option: module_hotfixes
-    value: true
+    value: "True"
     no_extra_spaces: true
   tags:
     - install
