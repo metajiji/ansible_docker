@@ -3,7 +3,7 @@
 # Can be: tarball | package
 docker_installation_type: package
 
-docker_tarball_release: 19.03.8
+docker_tarball_release: 19.03.9
 # Can be: aarch64 | armel | armhf | ppc64le | s390x | x86_64
 docker_tarball_arch: x86_64
 docker_tarball_url: "https://download.docker.com/linux/static/stable/{{ docker_tarball_arch }}/docker-{{ docker_tarball_release }}.tgz"
@@ -33,6 +33,10 @@ docker_required_packages: []
 #  - device-mapper-persistent-data
 #  - lvm2
 docker_required_packages_extra: []
+
+# Will be merged with docker_required_packages variable
+docker_tarball_required_packages:
+  - tar
 
 # Will be merged with installation variant: docker_[package|tarball]_packages
 docker_packages:

@@ -3,7 +3,9 @@
 - name: Install required packages
   become: true
   yum:
-    name: "{{ docker_required_packages | union(docker_required_packages_extra) }}"
+    name: "{{ docker_required_packages | union(docker_required_packages_extra
+            + (vars['docker_%s_required_packages' | format(docker_installation_type)] | default([]))
+          ) }}"
     state: present
   tags:
     - install
