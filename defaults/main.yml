@@ -60,5 +60,3 @@ docker_daemon_json:
   max-concurrent-downloads: 3
   max-concurrent-uploads: 5
   live-restore: true
-
-docker_firewalld_trusted: true

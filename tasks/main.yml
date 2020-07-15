@@ -28,24 +28,6 @@
   tags:
     - configure
 
-- name: Detect firewalld is enabled
-  systemd:
-    name: firewalld
-  register: _firewalld
-
-- name: Allow docker0 interface to trusted zone in firewalld
-  become: true
-  firewalld:
-    immediate: true
-    interface: docker0
-    permanent: true
-    state: enabled
-    zone: trusted
-  when:
-    - _firewalld.status.UnitFileState == "enabled"
-    - _firewalld.status.SubState == "running"
-    - docker_firewalld_trusted | bool
-
 - name: Ensure docker is started and enabled at boot
   become: true
   systemd:
