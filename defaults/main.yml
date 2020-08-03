@@ -1,7 +1,7 @@
 ---
 
 # Can be: tarball | package
-docker_installation_type: package
+docker_installation_type: tarball
 
 docker_tarball_release: 19.03.9
 # Can be: aarch64 | armel | armhf | ppc64le | s390x | x86_64
@@ -59,4 +59,3 @@ docker_daemon_json:
     max-file: "5"
   max-concurrent-downloads: 3
   max-concurrent-uploads: 5
-  live-restore: true
