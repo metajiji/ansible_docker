@@ -21,3 +21,10 @@
             + (vars['docker_%s_packages' | format(docker_installation_type)] | default([]))
           ) }}"
     state: present
+
+- name: Install docker-compose
+  include_tasks: install_compose.yml
+  when:
+    - docker_compose_install | bool
+  tags:
+    - docker-compose

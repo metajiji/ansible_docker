@@ -1,0 +1,49 @@
+---
+
+- name: Download docker-compose static binary
+  become: false
+  run_once: true
+  get_url:
+    url: "{{ docker_compose_url }}"
+    dest: "{{ playbook_dir }}/files/{{ docker_compose_arch }}-docker-compose"
+  delegate_to: localhost
+
+- name: Create a directory for docker if it does not exist
+  become: true
+  file:
+    path: /opt/docker
+    state: directory
+    mode: 0755
+
+- name: Check docker-compose installed version
+  stat:
+    path: /opt/docker/COMPOSE_INSTALLED.VERSION
+  register: _docker_compose_installed_version
+
+- name: Read /opt/docker/COMPOSE_INSTALLED.VERSION file
+  slurp:
+    src: /opt/docker/COMPOSE_INSTALLED.VERSION
+  register: _docker_compose_installed_version_string
+  when: _docker_compose_installed_version.stat.exists
+
+- name: Install docker-compose
+  become: true
+  block:
+    - name: Save /opt/docker/COMPOSE_INSTALLED.VERSION file
+      copy:
+        content: "{{ docker_compose_arch }}-{{ docker_compose_release }}"
+        dest: /opt/docker/COMPOSE_INSTALLED.VERSION
+    - name: Copy docker-compose binary
+      copy:
+        src: "{{ playbook_dir }}/files/{{ docker_compose_arch }}-docker-compose"
+        dest: /opt/docker/docker-compose
+        mode: 0755
+  when: not _docker_compose_installed_version.stat.exists
+      or ((_docker_compose_installed_version_string.content | default('') | b64decode) != ('%s-%s' | format(docker_compose_arch, docker_compose_release)))
+
+- name: Ensure alternatives links is exists for docker-compose
+  become: true
+  alternatives:
+    name: docker-compose
+    link: /usr/local/bin/docker-compose
+    path: /opt/docker/docker-compose

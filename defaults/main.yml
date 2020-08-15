@@ -59,3 +59,8 @@ docker_daemon_json:
     max-file: "5"
   max-concurrent-downloads: 3
   max-concurrent-uploads: 5
+
+docker_compose_install: true
+docker_compose_release: 1.26.2
+docker_compose_arch: "{{ docker_tarball_arch }}"
+docker_compose_url: "https://github.com/docker/compose/releases/download/{{ docker_compose_release }}/docker-compose-Linux-{{ docker_compose_arch }}"
