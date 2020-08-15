@@ -6,6 +6,7 @@
   get_url:
     url: "{{ docker_compose_url }}"
     dest: "{{ playbook_dir }}/files/{{ docker_compose_arch }}-docker-compose"
+    mode: 0644
   delegate_to: localhost
 
 - name: Create a directory for docker if it does not exist
@@ -33,6 +34,7 @@
       copy:
         content: "{{ docker_compose_arch }}-{{ docker_compose_release }}"
         dest: /opt/docker/COMPOSE_INSTALLED.VERSION
+        mode: 0644
     - name: Copy docker-compose binary
       copy:
         src: "{{ playbook_dir }}/files/{{ docker_compose_arch }}-docker-compose"

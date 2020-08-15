@@ -6,6 +6,7 @@
   get_url:
     url: "{{ docker_tarball_url }}"
     dest: "{{ playbook_dir }}/files/{{ docker_tarball_arch }}-{{ docker_tarball_url | basename }}"
+    mode: 0644
   delegate_to: localhost
 
 - name: Create a directory for docker if it does not exist
@@ -40,6 +41,7 @@
       copy:
         content: "{{ docker_tarball_arch }}-{{ docker_tarball_release }}"
         dest: /opt/docker/INSTALLED.VERSION
+        mode: 0644
   when: not _docker_installed_version.stat.exists
         or ((_docker_installed_version_string.content | default('') | b64decode) != ('%s-%s' | format(docker_tarball_arch, docker_tarball_release)))
 
@@ -106,6 +108,7 @@
       get_url:
         url: "{{ docker_tarball_bash_completion_url }}"
         dest: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
+        mode: 0644
       delegate_to: localhost
 
     - name: Copy docker bash-completion from ansible controller
@@ -113,6 +116,7 @@
       copy:
         src: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
         dest: /opt/docker/bash-completion
+        mode: 0644
 
     - name: Ensure alternatives links is exists for docker bash-completion
       alternatives:
