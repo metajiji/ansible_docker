@@ -10,6 +10,7 @@ docker_tarball_url: "https://download.docker.com/linux/static/stable/{{ docker_t
 
 docker_tarball_bash_completion_enabled: true
 docker_tarball_bash_completion_url: "https://github.com/docker/docker-ce/raw/v{{ docker_tarball_release }}/components/cli/contrib/completion/bash/docker"
+docker_bash_completion_path: /etc/bash_completion.d/docker
 docker_tarball_bash_completion_packages:
   - bash-completion
 
@@ -64,3 +65,7 @@ docker_compose_install: true
 docker_compose_release: 1.26.2
 docker_compose_arch: "{{ docker_tarball_arch }}"
 docker_compose_url: "https://github.com/docker/compose/releases/download/{{ docker_compose_release }}/docker-compose-Linux-{{ docker_compose_arch }}"
+
+docker_compose_bash_completion_install: true
+docker_compose_bash_completion_url: "https://github.com/docker/compose/raw/{{ docker_compose_release }}/contrib/completion/bash/docker-compose"
+docker_compose_bash_completion_path: /etc/bash_completion.d/docker-compose
