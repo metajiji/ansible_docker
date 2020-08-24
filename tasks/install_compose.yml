@@ -49,3 +49,30 @@
     name: docker-compose
     link: /usr/local/bin/docker-compose
     path: /opt/docker/docker-compose
+
+- name: Download and install docker-compose bash-completion
+  become: true
+  block:
+    - name: Download docker-compose bash-completion
+      become: false
+      run_once: true
+      no_log: true
+      get_url:
+        url: "{{ docker_compose_bash_completion_url }}"
+        dest: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}-compose"
+        mode: 0644
+      delegate_to: localhost
+
+    - name: Copy docker-compose bash-completion from ansible controller
+      no_log: true
+      copy:
+        src: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}-compose"
+        dest: /opt/docker/bash-completion-compose
+        mode: 0644
+
+    - name: Ensure alternatives links is exists for docker-compose bash-completion
+      alternatives:
+        name: docker-bash-completion-compose
+        link: "{{ docker_compose_bash_completion_path }}"
+        path: /opt/docker/bash-completion-compose
+  when: docker_compose_bash_completion_install

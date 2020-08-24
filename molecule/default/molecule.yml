@@ -1,6 +1,7 @@
 ---
 platforms:
-  - name: molecule-docker-el8-${CI_JOB_ID:-1}
+  - &platform-basic
+    name: molecule-docker-package-el8-${CI_JOB_ID:-1}
     image: centos:8
     volumes:
       - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
@@ -11,12 +12,18 @@ platforms:
       - SYS_ADMIN  # For systemd
       - NET_ADMIN  # For dockerd
       - SYS_RESOURCE  # For dockerd oom_score_adj
+  - <<: *platform-basic
+    name: molecule-docker-tarball-el8-${CI_JOB_ID:-1}
 provisioner:
   name: ansible
   inventory:
     host_vars:
-      molecule-docker-el8-${CI_JOB_ID:-1}:
+      molecule-docker-package-el8-${CI_JOB_ID:-1}:
         ansible_python_interpreter: /usr/bin/python3
+        docker_installation_type: package
+      molecule-docker-tarball-el8-${CI_JOB_ID:-1}:
+        ansible_python_interpreter: /usr/bin/python3
+        docker_installation_type: tarball
   log: true
   config_options:
     defaults:
