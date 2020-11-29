@@ -18,6 +18,7 @@
     section: "{{ docker_package_repo_name }}"
     option: enabled
     value: "True"
+    mode: 0644
     no_extra_spaces: true
   tags:
     - install
@@ -33,6 +34,7 @@
     section: "{{ docker_package_repo_name }}"
     option: module_hotfixes
     value: "True"
+    mode: 0644
     no_extra_spaces: true
   tags:
     - install

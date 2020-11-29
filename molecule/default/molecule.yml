@@ -1,29 +1,32 @@
 ---
 platforms:
   - &platform-basic
-    name: molecule-docker-package-el8-${CI_JOB_ID:-1}
-    image: centos:8
+    name: molecule-docker-package-el7-${CI_JOB_ID:-1}
+    image: centos:7  # Centos 8 is disabled due systemd bug https://bugzilla.redhat.com/show_bug.cgi?id=1853736
     volumes:
-      - "/sys/fs/cgroup:/sys/fs/cgroup:ro"
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
     command: /lib/systemd/systemd
-    stop_signal: "SIGRTMIN+3"
+    stop_signal: SIGRTMIN+3
     privileged: false
     capabilities:
       - SYS_ADMIN  # For systemd
       - NET_ADMIN  # For dockerd
       - SYS_RESOURCE  # For dockerd oom_score_adj
   - <<: *platform-basic
-    name: molecule-docker-tarball-el8-${CI_JOB_ID:-1}
+    name: molecule-docker-tarball-fc33-${CI_JOB_ID:-1}
+    image: fedora:33
 provisioner:
   name: ansible
   inventory:
     host_vars:
-      molecule-docker-package-el8-${CI_JOB_ID:-1}:
-        ansible_python_interpreter: /usr/bin/python3
+      molecule-docker-package-el7-${CI_JOB_ID:-1}:
+        ansible_python_interpreter: /usr/bin/python
         docker_installation_type: package
-      molecule-docker-tarball-el8-${CI_JOB_ID:-1}:
+      molecule-docker-tarball-fc33-${CI_JOB_ID:-1}:
         ansible_python_interpreter: /usr/bin/python3
         docker_installation_type: tarball
+        docker_compose_required_packages:
+          - libxcrypt-compat
   log: true
   config_options:
     defaults:
@@ -33,9 +36,7 @@ provisioner:
     diff:
       always: true
 verifier:
-  name: testinfra
-  options:
-    verbose: true
+  name: ansible
 dependency:
   name: galaxy
 driver:

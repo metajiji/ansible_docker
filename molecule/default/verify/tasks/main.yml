@@ -1,0 +1,25 @@
+---
+
+- name: Check docker is started and enabled at boot
+  become: true
+  check_mode: true
+  systemd:
+    name: docker
+    state: started
+    enabled: true
+  register: docker_service_status
+
+- name: Test docker service is started and enabled at boot
+  assert:
+    that:
+      - not docker_service_status.changed
+
+- name: Check docker installed version
+  include: "install_{{ docker_installation_type }}.yml"
+  when:
+    - (('%s/tasks/install_%s.yml' | format(role_path, docker_installation_type)) is exists)
+
+- name: Check docker-compose installed version
+  include: install_compose.yml
+  when:
+    - docker_compose_install | bool

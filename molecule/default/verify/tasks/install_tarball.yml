@@ -1,0 +1,23 @@
+---
+
+- name: Get current docker version
+  changed_when: false
+  command: >
+    docker info -f
+    '{{ '{{' }} .Architecture {{ '}}' }}-{{ '{{' }} .ServerVersion {{ '}}' }}'
+  register: docker_info
+
+- name: Read /opt/docker/INSTALLED.VERSION file
+  slurp:
+    src: /opt/docker/INSTALLED.VERSION
+  register: docker_installed_version_string
+
+- name: Check docker installed version
+  assert:
+    that:
+      - installed_version == from_config_version
+      - installed_version == runtime_version
+  vars:
+    installed_version: "{{ docker_installed_version_string.content | default('') | b64decode }}"
+    from_config_version: "{{ '%s-%s' | format(docker_tarball_arch, docker_tarball_release) }}"
+    runtime_version: "{{ docker_info.stdout }}"
