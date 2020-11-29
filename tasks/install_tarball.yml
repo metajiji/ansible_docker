@@ -34,6 +34,7 @@
       unarchive:
         src: "{{ playbook_dir }}/files/{{ docker_tarball_arch }}-{{ docker_tarball_url | basename }}"
         dest: /opt/docker
+        mode: 0644
         extra_opts:
           - --strip-components=1
 
@@ -90,6 +91,13 @@
     name: docker
     state: present
     system: true
+
+- name: Ensure executable permissions for tarball binaries
+  become: true
+  file:
+    path: "/opt/docker/{{ item }}"
+    mode: 0755
+  loop: "{{ docker_tarball_binaries }}"
 
 - name: Ensure alternatives links is exists
   become: true

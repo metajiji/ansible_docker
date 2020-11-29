@@ -62,9 +62,11 @@ docker_daemon_json:
   max-concurrent-uploads: 5
 
 docker_compose_install: true
-docker_compose_release: 1.26.2
+docker_compose_release: 1.27.4
 docker_compose_arch: "{{ docker_tarball_arch }}"
 docker_compose_url: "https://github.com/docker/compose/releases/download/{{ docker_compose_release }}/docker-compose-Linux-{{ docker_compose_arch }}"
+
+docker_compose_required_packages: []
 
 docker_compose_bash_completion_install: true
 docker_compose_bash_completion_url: "https://github.com/docker/compose/raw/{{ docker_compose_release }}/contrib/completion/bash/docker-compose"

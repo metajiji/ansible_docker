@@ -1,11 +1,19 @@
 ---
 
+- name: Install docker-compose required packages
+  become: true
+  yum:
+    name: "{{ docker_compose_required_packages }}"
+    state: present
+  tags:
+    - install
+
 - name: Download docker-compose static binary
   become: false
   run_once: true
   get_url:
     url: "{{ docker_compose_url }}"
-    dest: "{{ playbook_dir }}/files/{{ docker_compose_arch }}-docker-compose"
+    dest: "{{ playbook_dir }}/files/{{ docker_compose_arch }}-docker-compose-{{ docker_compose_release }}"
     mode: 0644
   delegate_to: localhost
 
@@ -37,7 +45,7 @@
         mode: 0644
     - name: Copy docker-compose binary
       copy:
-        src: "{{ playbook_dir }}/files/{{ docker_compose_arch }}-docker-compose"
+        src: "{{ playbook_dir }}/files/{{ docker_compose_arch }}-docker-compose-{{ docker_compose_release }}"
         dest: /opt/docker/docker-compose
         mode: 0755
   when: not _docker_compose_installed_version.stat.exists
@@ -59,14 +67,14 @@
       no_log: true
       get_url:
         url: "{{ docker_compose_bash_completion_url }}"
-        dest: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}-compose"
+        dest: "{{ playbook_dir }}/files/bash-completion-compose-{{ docker_compose_release }}"
         mode: 0644
       delegate_to: localhost
 
     - name: Copy docker-compose bash-completion from ansible controller
       no_log: true
       copy:
-        src: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}-compose"
+        src: "{{ playbook_dir }}/files/bash-completion-compose-{{ docker_compose_release }}"
         dest: /opt/docker/bash-completion-compose
         mode: 0644
 
