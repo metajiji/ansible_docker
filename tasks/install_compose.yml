@@ -69,6 +69,7 @@
         url: "{{ docker_compose_bash_completion_url }}"
         dest: "{{ playbook_dir }}/files/bash-completion-compose-{{ docker_compose_release }}"
         mode: 0644
+        force: false
       delegate_to: localhost
 
     - name: Copy docker-compose bash-completion from ansible controller

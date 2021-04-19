@@ -118,6 +118,7 @@
         url: "{{ docker_tarball_bash_completion_url }}"
         dest: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
         mode: 0644
+        force: false
       delegate_to: localhost
 
     - name: Copy docker bash-completion from ansible controller
