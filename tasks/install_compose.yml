@@ -64,7 +64,7 @@
     - name: Download docker-compose bash-completion
       become: false
       run_once: true
-      no_log: true
+      diff: false
       get_url:
         url: "{{ docker_compose_bash_completion_url }}"
         dest: "{{ playbook_dir }}/files/bash-completion-compose-{{ docker_compose_release }}"
