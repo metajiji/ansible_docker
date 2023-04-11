@@ -1,0 +1,65 @@
+---
+
+- name: Download repo file
+  become: true
+  register: _download_rpm_repo_file
+  until: _download_rpm_repo_file is succeeded
+  retries: 15
+  delay: 1
+  ansible.builtin.get_url:
+    url: "{{ docker_package_repo_url }}"
+    dest: "/etc/yum.repos.d/{{ docker_package_repo_file }}"
+    mode: 0644
+    owner: root
+    group: root
+  tags:
+    - install
+
+- name: Enable {{ docker_package_repo_name }} repo
+  become: true
+  community.general.ini_file:
+    dest: "/etc/yum.repos.d/{{ docker_package_repo_file }}"
+    section: "{{ docker_package_repo_name }}"
+    option: enabled
+    value: "True"
+    mode: 0644
+    no_extra_spaces: true
+  tags:
+    - install
+
+- name: Unhold docker packages for {{ docker_package_repo_name }}
+  become: true
+  changed_when: false
+  community.general.ini_file:
+    dest: "/etc/yum.repos.d/{{ docker_package_repo_file }}"
+    section: "{{ docker_package_repo_name }}"
+    option: exclude
+    state: absent
+    mode: 0644
+  tags:
+    - install
+
+- name: Install docker packages
+  become: true
+  ansible.builtin.yum:
+    name: "{{ docker_package_packages }}"
+    state: present
+  tags:
+    - install
+
+- name: Hold docker packages for {{ docker_package_repo_name }}
+  become: true
+  changed_when: false
+  community.general.ini_file:
+    dest: "/etc/yum.repos.d/{{ docker_package_repo_file }}"
+    section: "{{ docker_package_repo_name }}"
+    option: exclude
+    value: "{{ _hold_packages | join(' ') }}"
+    mode: 0644
+    no_extra_spaces: true
+  vars:
+    _hold_packages:
+      - docker-ce
+      - docker-ce-cli
+  tags:
+    - install

@@ -1,48 +1,87 @@
 ---
 platforms:
   - &platform-basic
-    name: molecule-docker-package-el7-${CI_JOB_ID:-1}
-    image: centos:7  # Centos 8 is disabled due systemd bug https://bugzilla.redhat.com/show_bug.cgi?id=1853736
+    name: molecule-docker-fc37-package-${CI_JOB_ID:-1}
+    image: fedora:37
     volumes:
-      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      - /var/lib/docker
+      - /lib/modules:/lib/modules:ro
+    keep_volumes: false
+    tty: true
+    tmpfs:
+      - /run
     command: /lib/systemd/systemd
     stop_signal: SIGRTMIN+3
-    privileged: false
+    privileged: true  # For dockerd
     capabilities:
       - SYS_ADMIN  # For systemd
       - NET_ADMIN  # For dockerd
+      - SYS_MODULE  # For dockerd and modprobe
       - SYS_RESOURCE  # For dockerd oom_score_adj
+    security_opts:
+      - apparmor=unconfined
+      - seccomp=unconfined
+    groups:
+      - docker_package
+  - &platform-tarball
+    <<: *platform-basic
+    name: molecule-docker-fc37-tarball-${CI_JOB_ID:-1}
+    groups:
+      - docker_tarball
   - <<: *platform-basic
-    name: molecule-docker-tarball-fc33-${CI_JOB_ID:-1}
-    image: fedora:33
+    name: molecule-docker-deb10-package-${CI_JOB_ID:-1}
+    image: debian:10
+  - <<: *platform-tarball
+    name: molecule-docker-deb10-tarball-${CI_JOB_ID:-1}
+    image: debian:10
+  - <<: *platform-basic
+    name: molecule-docker-deb11-package-${CI_JOB_ID:-1}
+    image: debian:11
+  - <<: *platform-tarball
+    name: molecule-docker-deb11-tarball-${CI_JOB_ID:-1}
+    image: debian:11
+  - <<: *platform-basic
+    name: molecule-docker-ubuntu20.04-package-${CI_JOB_ID:-1}
+    image: ubuntu:20.04
+  - <<: *platform-tarball
+    name: molecule-docker-ubuntu20.04-tarball-${CI_JOB_ID:-1}
+    image: ubuntu:20.04
+  - <<: *platform-basic
+    name: molecule-docker-ubuntu22.04-package-${CI_JOB_ID:-1}
+    image: ubuntu:22.04
+  - <<: *platform-tarball
+    name: molecule-docker-ubuntu22.04-tarball-${CI_JOB_ID:-1}
+    image: ubuntu:22.04
+
 provisioner:
   name: ansible
-  inventory:
-    host_vars:
-      molecule-docker-package-el7-${CI_JOB_ID:-1}:
-        ansible_python_interpreter: /usr/bin/python
-        docker_installation_type: package
-      molecule-docker-tarball-fc33-${CI_JOB_ID:-1}:
-        ansible_python_interpreter: /usr/bin/python3
-        docker_installation_type: tarball
-        docker_compose_required_packages:
-          - libxcrypt-compat
   log: true
   config_options:
     defaults:
       stdout_callback: debug
       error_on_undefined_vars: true
-      callback_whitelist: profile_tasks
+      callbacks_enabled: profile_roles,profile_tasks,timer
     diff:
       always: true
+  inventory:
+    host_vars:
+      molecule-docker-deb11-package-${CI_JOB_ID:-1}:
+        # Minimum available version 20.10.6
+        docker_version: 20.10.18
+      molecule-docker-ubuntu22.04-package-${CI_JOB_ID:-1}:
+        # Minimum available version 20.10.13
+        docker_version: 20.10.18
+
 verifier:
   name: ansible
+
 dependency:
   name: galaxy
+
 driver:
   name: docker
-lint: |
+
+lint: |-
   set -e
   yamllint .
-  ansible-lint --force-color
-  flake8
+  ansible-lint --force-color .

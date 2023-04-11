@@ -1,0 +1,22 @@
+---
+
+- name: "Include {{ docker_installation_type }} tasks"
+  ansible.builtin.include_tasks: install_package_redhat.yml
+  tags:
+    - install
+
+#
+# https://bugzilla.redhat.com/show_bug.cgi?id=1756473
+# https://stackoverflow.com/a/60153726
+#
+- name: Workaround with excluded containerd.io package in RHEL8
+  become: true
+  community.general.ini_file:
+    dest: "/etc/yum.repos.d/{{ docker_package_repo_file }}"
+    section: "{{ docker_package_repo_name }}"
+    option: module_hotfixes
+    value: "True"
+    mode: 0644
+    no_extra_spaces: true
+  tags:
+    - install

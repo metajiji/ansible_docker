@@ -1,0 +1,17 @@
+---
+
+_distribution_string: "{{ ansible_os_family }} {{ ansible_distribution }}-{{ ansible_distribution_version }}"
+
+docker_first_found_list_files: >-
+  {{ docker_first_found_list | product(['yml']) | map('join', '.') | list }}
+
+docker_defaults_vars_first_found_list: >-
+  {{ ['{role_path}/defaults'.format(**vars)] | product(docker_first_found_list_files) | map('join', '/') | list }}
+
+docker_distro_vars_file: "{{ q('first_found', docker_defaults_vars_first_found_list, errors='ignore') | list }}"
+docker_distro_vars: >-
+  {%- if docker_distro_vars_file | length > 0 -%}
+    {{ q('template', docker_distro_vars_file | first) | first | from_yaml }}
+  {%- else -%}
+    {{ {} }}
+  {%- endif -%}

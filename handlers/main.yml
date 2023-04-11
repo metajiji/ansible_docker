@@ -1,17 +1,17 @@
 ---
 
-- name: systemctl daemon-reload
-  systemd:
+- name: Systemctl daemon-reload
+  ansible.builtin.systemd:
     daemon_reload: true
 
-- name: systemctl restart-docker
+- name: Systemctl restart-docker
   become: true
-  service:
+  ansible.builtin.service:
     name: docker
     state: restarted
 
-- name: systemctl restart-containerd
+- name: Systemctl restart-containerd
   become: true
-  service:
+  ansible.builtin.service:
     name: containerd
     state: restarted

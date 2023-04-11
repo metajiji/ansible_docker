@@ -1,15 +1,18 @@
 ---
 
+docker_version: 20.10.20
+
 # Can be: tarball | package
 docker_installation_type: tarball
 
-docker_tarball_release: 19.03.15
+docker_tarball_release: "{{ docker_version }}"
+
 # Can be: aarch64 | armel | armhf | ppc64le | s390x | x86_64
 docker_tarball_arch: x86_64
 docker_tarball_url: "https://download.docker.com/linux/static/stable/{{ docker_tarball_arch }}/docker-{{ docker_tarball_release }}.tgz"
 
 docker_tarball_bash_completion_enabled: true
-docker_tarball_bash_completion_url: "https://github.com/docker/docker-ce/raw/v{{ docker_tarball_release }}/components/cli/contrib/completion/bash/docker"
+docker_tarball_bash_completion_url: "https://github.com/docker/cli/raw/v{{ docker_tarball_release }}/contrib/completion/bash/docker"
 docker_bash_completion_path: /etc/bash_completion.d/docker
 docker_tarball_bash_completion_packages:
   - bash-completion
@@ -18,19 +21,42 @@ docker_tarball_bash_completion_packages:
 docker_tarball_binaries:
   - containerd
   - containerd-shim
+  - containerd-shim-runc-v2
+  - ctr
   - docker
   - docker-init
   - docker-proxy
   - dockerd
   - runc
 
-docker_package_repo_file: docker-ce.repo
+docker_package_repo_file: "{{ docker_distro_vars.docker_package_repo_file }}"
 docker_package_repo_distribution: "{{ ansible_distribution | lower }}"
 docker_package_repo_url: "https://download.docker.com/linux/{{ docker_package_repo_distribution }}/{{ docker_package_repo_file }}"
-docker_package_repo_name: docker-ce-stable
+docker_package_repo_name: "{{ docker_distro_vars.docker_package_repo_name }}"
+
+docker_package_gpg_keys: "{{ docker_distro_vars.docker_package_gpg_keys | default([]) }}"
+# Example:
+# For debian based
+# For more info read https://docs.ansible.com/ansible/latest/collections/ansible/builtin/get_url_module.html (ape-key is deprecated now)
+# docker_package_gpg_keys:
+#   - url: https://ftp-master.debian.org/keys/archive-key-6.0.asc
+
+docker_package_enable_repositories: "{{ docker_distro_vars.docker_package_enable_repositories | default([]) }}"
+# Example:
+# For redhat based
+# docker_package_enable_repositories:
+#   - name: centos-kernel
+#     path: /etc/yum.repos.d/CentOS-x86_64-kernel.repo
+#     enabled: 1
+# For debian based
+# For more info read https://docs.ansible.com/ansible/latest/collections/ansible/builtin/apt_repository_module.html
+# docker_package_enable_repositories:
+#   - name: centos-kernel
+#     path: /etc/yum.repos.d/CentOS-x86_64-kernel.repo
+#     enabled: 1
 
 # https://docs.docker.com/install/linux/docker-ce/centos/
-docker_required_packages: []
+docker_required_packages: "{{ docker_distro_vars.docker_required_packages | default([]) }}"
 #  - device-mapper-persistent-data
 #  - lvm2
 docker_required_packages_extra: []
@@ -45,10 +71,7 @@ docker_packages:
 docker_packages_extra: []
 
 # Will be merged with docker_packages variable
-docker_package_packages:
-  - docker-ce
-  # - docker-ce-cli
-  # - containerd.io
+docker_package_packages: "{{ docker_distro_vars.docker_package_packages }}"
 
 # https://docs.docker.com/engine/reference/commandline/dockerd/
 docker_daemon_json:
@@ -62,13 +85,26 @@ docker_daemon_json:
   max-concurrent-uploads: 5
 
 docker_compose_install: true
-docker_compose_release: 1.29.2
+docker_compose_release: 2.12.2
 docker_compose_arch: "{{ docker_tarball_arch }}"
-docker_compose_url: "https://github.com/docker/compose/releases/download/{{ docker_compose_release }}/docker-compose-Linux-{{ docker_compose_arch }}"
+docker_compose_url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_release }}/docker-compose-linux-{{ docker_compose_arch }}"
 
-docker_compose_required_packages:
-  - "{{ {3: 'libxcrypt', 2: 'glibc'}[ansible_python.version.major] }}"  # libcrypt.so.1
+docker_compose_required_packages: []
+  # - "{{ {3: 'libxcrypt', 2: 'glibc'}[ansible_python.version.major] }}"  # libcrypt.so.1
 
-docker_compose_bash_completion_install: true
-docker_compose_bash_completion_url: "https://github.com/docker/compose/raw/{{ docker_compose_release }}/contrib/completion/bash/docker-compose"
-docker_compose_bash_completion_path: /etc/bash_completion.d/docker-compose
+docker_cron_cleanup_enabled: true
+docker_cron_cleanup_minute: 0
+docker_cron_cleanup_hour: 6
+
+docker_cron_cleanup_command: >-
+  docker image prune -af --filter until=24h
+
+docker_cron_cleanup_env:
+  PATH: /usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin
+
+docker_first_found_list:
+  - "{{ ansible_distribution | lower }}-{{ ansible_distribution_version }}"
+  - "{{ ansible_distribution | lower }}-{{ ansible_distribution_major_version }}"
+  - "{{ ansible_distribution | lower }}"
+  - "{{ ansible_os_family | lower }}"
+  - "{{ ansible_system | lower }}"
