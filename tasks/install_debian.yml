@@ -1,0 +1,106 @@
+---
+
+- name: Add required GPG public keys | {{ _distribution_string }}
+  become: true
+  register: _download_apt_gpg_keys
+  until: _download_apt_gpg_keys is succeeded
+  retries: 15
+  delay: 1
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "{{ item.dest }}"
+    validate_certs: "{{ item.validate_certs | default(omit) }}"
+    use_proxy: false
+    mode: 0644
+  loop: "{{ docker_package_gpg_keys }}"
+
+- name: Add specified repositories | {{ _distribution_string }}
+  become: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  ansible.builtin.apt_repository:
+    codename: "{{ item.codename | default(omit) }}"
+    filename: "{{ item.filename | default(omit) }}"
+    mode: "{{ item.mode | default('0644') }}"
+    repo: "{{ item.repo }}"
+    state: "{{ item.state | default(omit) }}"
+    update_cache: "{{ item.update_cache | default(omit) }}"
+    update_cache_retries: "{{ item.update_cache_retries | default(omit) }}"
+    update_cache_retry_max_delay: "{{ item.update_cache_retry_max_delay | default(omit) }}"
+    validate_certs: "{{ item.validate_certs | default(omit) }}"
+  loop: "{{ docker_package_enable_repositories }}"
+
+- name: Install required packages | {{ _distribution_string }}
+  become: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  ansible.builtin.apt:
+    name: "{{ docker_required_packages | union(_required_packages) }}"
+    state: present
+    update_cache: true
+    install_recommends: false
+  vars:
+    _installation_type_required_packages: >-
+      {{ q('ansible.builtin.vars', 'docker_{docker_installation_type}_required_packages'.format(**vars), default=[]) }}
+    _required_packages: >-
+      {{ docker_required_packages_extra | union(*_installation_type_required_packages) }}
+  tags:
+    - install
+
+- name: Remove docker packages hold
+  become: true
+  changed_when: false
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: install
+  loop: >-
+    {{ docker_package_packages
+      | select('match', '^.+=.+$')
+      | map('regex_replace', '^.+:(.+)=.+$', '\1')
+      | map('regex_replace', '^(.+)=.+$', '\1')
+    }}
+  tags:
+    - install
+
+- name: "Include {{ docker_installation_type }} tasks"
+  ansible.builtin.include_tasks: "{{ _filename }}"
+  vars:
+    _filename: "{{ lookup('first_found', _first_found_list, errors='ignore') }}"
+    _filename_format: "{{ 'install_{docker_installation_type}_\\1.yml'.format(**vars) }}"
+    _first_found_list: >-
+      {{ docker_first_found_list | map('regex_replace', '(.+)', _filename_format) | list }}
+  when:
+    - _filename is exists
+  tags:
+    - install
+
+- name: Install docker packages | {{ _distribution_string }}
+  become: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  ansible.builtin.apt:
+    state: present
+    name: "{{ docker_packages | union(_packages) }}"
+    update_cache: true
+    install_recommends: false
+  vars:
+    _installation_type_packages: >-
+      {{ q('ansible.builtin.vars', 'docker_{docker_installation_type}_packages'.format(**vars), default=[]) }}
+    _tarball_bash_completion_packages: >-
+      {{ docker_tarball_bash_completion_enabled | ternary(docker_tarball_bash_completion_packages, []) }}
+    _packages: >-
+      {{ docker_packages_extra | union(_tarball_bash_completion_packages) | union(*_installation_type_packages) }}
+  tags:
+    - install
+
+- name: Prevent docker-ce package from being upgraded
+  become: true
+  changed_when: false
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop: >-
+    {{ docker_package_packages
+      | select('match', '^.+=.+$')
+      | map('regex_replace', '^.+:(.+)=.+$', '\1')
+      | map('regex_replace', '^(.+)=.+$', '\1')
+    }}
+  tags:
+    - install

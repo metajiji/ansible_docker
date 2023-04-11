@@ -1,0 +1,23 @@
+---
+
+docker_package_gpg_keys:
+  - url: https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg
+    dest: /etc/apt/trusted.gpg.d/docker.asc
+
+docker_package_enable_repositories:
+  - repo: >-
+      deb [signed-by=/etc/apt/trusted.gpg.d/docker.asc]
+      https://download.docker.com/linux/{{ ansible_distribution | lower }}
+      {{ ansible_distribution_release }} stable
+    filename: docker
+    state: present
+
+docker_package_packages:
+  - "docker-ce=5:{{ docker_version }}*"
+  - "docker-ce-cli=5:{{ docker_version }}*"
+  # - docker-ce=5:{{ docker_version }}~3-0~{{ ansible_distribution | lower }}-{{ ansible_distribution_release|lower }}
+  # - docker-ce-cli=5:{{ docker_version }}~3-0~{{ ansible_distribution | lower }}-{{ ansible_distribution_release|lower }}
+  # - containerd.io
+
+docker_required_packages:
+  - cron

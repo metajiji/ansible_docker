@@ -1,0 +1,21 @@
+---
+
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Check docker installed version
+  ansible.builtin.assert:
+    that:
+      - _docker_server_version == docker_version
+      - _docker_client_version == docker_version
+      - _docker_server_version in _docker_server_package_version
+      - _docker_client_version in _docker_client_package_version
+  vars:
+    _runtime_versions: "{{ _docker_info.stdout | from_json }}"
+    _docker_client_version: "{{ _runtime_versions.client }}"
+    _docker_server_version: "{{ _runtime_versions.server }}"
+    _docker_server_package_version: "{{ ansible_facts.packages['docker-ce'].0.version }}"
+    _docker_client_package_version: "{{ ansible_facts.packages['docker-ce-cli'].0.version }}"
+
+# docker version -f '{"client": "{{.Client.Version}}","server": "{{.Server.Version}}"}'

@@ -1,13 +1,30 @@
 ---
 
-- name: Include install tasks
-  include: install.yml
+- name: Include check tasks | {{ _distribution_string }}
+  ansible.builtin.include_tasks: "check_{{ docker_installation_type }}.yml"
   tags:
+    - check
+    - install
+
+- name: Include install tasks | {{ _distribution_string }}
+  ansible.builtin.include_tasks: "{{ lookup('first_found', _first_found_list) }}"
+  vars:
+    _first_found_list: >-
+      {{ docker_first_found_list | map('regex_replace', '(.+)', 'install_\1.yml') | list }}
+  tags:
+    - install
+
+- name: Install docker-compose
+  ansible.builtin.include_tasks: install_compose.yml
+  when:
+    - docker_compose_install | bool
+  tags:
+    - docker-compose
     - install
 
 - name: Ensure directroy /etc/docker is exists
   become: true
-  file:
+  ansible.builtin.file:
     path: /etc/docker
     state: directory
     mode: 0700
@@ -18,20 +35,65 @@
 
 - name: Configure dockerd
   become: true
-  copy:
+  ansible.builtin.copy:
     content: "{{ docker_daemon_json | to_nice_json }}\n"
     dest: /etc/docker/daemon.json
     mode: 0644
     owner: root
     group: root
-  notify: systemctl restart-docker
+  notify: Systemctl restart-docker
   tags:
     - configure
 
-- name: Ensure docker is started and enabled at boot
+- name: Get docker version from socket
   become: true
-  systemd:
+  register: _version
+  changed_when: false
+  ansible.builtin.uri:
+    url: http://localhost/version
+    unix_socket: /run/docker.sock
+    method: GET
+    use_proxy: false
+    status_code:
+      - 200
+      - -1  # When no socket file or unable connect
+
+- name: Ensure docker is started and enabled at boot or restart when runtime version mismatch
+  become: true
+  ansible.builtin.systemd:
     name: docker
-    state: started
+    state: "{{ (_engine_version == docker_version) | ternary('started', 'restarted') }}"
     enabled: true
     daemon_reload: true
+  vars:
+    _engine_version_json: >-
+      {{
+        _version.json.Components | default({})
+        | selectattr('Name', 'equalto', 'Engine')
+        | first | default([])
+      }}
+    _engine_version: "{{ _engine_version_json.Version | default('unknown') }}"
+
+- name: Add env variables for cleunup docker images cron job
+  ansible.builtin.cron:
+    env: true
+    name: "{{ item.key }}"
+    job: "{{ item.value }}"
+    cron_file: docker_cleaup_images
+    user: root
+    state: "{{ docker_cron_cleanup_enabled | ternary('present', 'absent') }}"
+  loop: "{{ docker_cron_cleanup_env | dict2items }}"
+  tags:
+    - cron
+
+- name: Add cleunup docker images cron job
+  ansible.builtin.cron:
+    name: cleunup cron job
+    cron_file: docker_cleaup_images
+    user: root
+    hour: "{{ docker_cron_cleanup_hour | string }}"
+    minute: "{{ docker_cron_cleanup_minute | string }}"
+    job: "{{ docker_cron_cleanup_command }}"
+    state: "{{ docker_cron_cleanup_enabled | ternary('present', 'absent') }}"
+  tags:
+    - cron

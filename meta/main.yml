@@ -1,11 +1,17 @@
 ---
 galaxy_info:
   author: Denis Kadyshev
+  role_name: docker
+  namespace: den4k
   description: Install Docker daemon
   license: WTFPL
-  min_ansible_version: 2.7
+  min_ansible_version: "2.7"
   platforms:
-    - name: CentOS
+    - name: EL
       versions:
-        - All
+        - "7"
+    - name: Fedora
+      versions:
+        - "36"
+        - "37"
   galaxy_tags: []

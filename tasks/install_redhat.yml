@@ -1,0 +1,34 @@
+---
+
+- name: Install required packages
+  become: true
+  ansible.builtin.yum:
+    name: "{{ docker_required_packages | union(_required_packages) }}"
+    state: present
+  vars:
+    _installation_type_required_packages: >-
+      {{ q('ansible.builtin.vars', 'docker_{docker_installation_type}_required_packages'.format(**vars), default=[]) }}
+    _required_packages: >-
+      {{ docker_required_packages_extra | union(*_installation_type_required_packages) }}
+  tags:
+    - install
+
+- name: Install docker packages
+  become: true
+  ansible.builtin.yum:
+    name: "{{ docker_packages | union(docker_packages_extra) }}"
+    state: present
+  tags:
+    - install
+
+- name: "Include {{ docker_installation_type }} tasks"
+  ansible.builtin.include_tasks: "{{ _filename }}"
+  vars:
+    _filename: "{{ lookup('first_found', _first_found_list, errors='ignore') }}"
+    _filename_format: "{{ 'install_{docker_installation_type}_\\1.yml'.format(**vars) }}"
+    _first_found_list: >-
+      {{ docker_first_found_list | map('regex_replace', '(.+)', _filename_format) | list }}
+  when:
+    - _filename is exists
+  tags:
+    - install

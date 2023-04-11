@@ -1,0 +1,23 @@
+---
+
+# Ansible cannot interact with apt package manager without this package
+- name: Install python3-apt for debian distros
+  ansible.builtin.apt:
+    name: python3-apt
+  when:
+    - ansible_os_family | lower == 'debian'
+
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Check any docker package is installed
+  ansible.builtin.assert:
+    that:
+      - _installed_docker_packages | length == 0
+    fail_msg: Detected installed docker packages "{{ _installed_docker_packages | join(', ') }}"
+  vars:
+    _installed_docker_packages: "{{ ansible_facts.packages.keys() | intersect(_docker_packages) }}"
+    _docker_packages:
+      - docker-ce
+      - docker-ce-cli

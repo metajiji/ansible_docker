@@ -3,35 +3,43 @@
 - name: Download docker static binaries
   become: false
   run_once: true
-  get_url:
+  delegate_to: localhost
+  register: _download_docker_static_binaries
+  until: _download_docker_static_binaries is succeeded
+  retries: 15
+  delay: 1
+  ansible.builtin.get_url:
     url: "{{ docker_tarball_url }}"
     dest: "{{ playbook_dir }}/files/{{ docker_tarball_arch }}-{{ docker_tarball_url | basename }}"
     mode: 0644
-  delegate_to: localhost
 
 - name: Create a directory for docker if it does not exist
   become: true
-  file:
+  ansible.builtin.file:
     path: /opt/docker
     state: directory
     mode: 0755
 
 - name: Check installed version
-  stat:
+  ansible.builtin.stat:
     path: /opt/docker/INSTALLED.VERSION
   register: _docker_installed_version
 
 - name: Read /opt/docker/INSTALLED.VERSION file
-  slurp:
+  ansible.builtin.slurp:
     src: /opt/docker/INSTALLED.VERSION
   register: _docker_installed_version_string
   when: _docker_installed_version.stat.exists
 
 - name: Download and install docker
   become: true
+  when: not _docker_installed_version.stat.exists
+        or ((_docker_installed_version_string.content | default('') | b64decode) != _installed_version)
+  vars:
+    _installed_version: "{{ docker_tarball_arch }}-{{ docker_tarball_release }}"
   block:
     - name: Installing docker binaries
-      unarchive:
+      ansible.builtin.unarchive:
         src: "{{ playbook_dir }}/files/{{ docker_tarball_arch }}-{{ docker_tarball_url | basename }}"
         dest: /opt/docker
         mode: 0644
@@ -39,69 +47,78 @@
           - --strip-components=1
 
     - name: Save /opt/docker/INSTALLED.VERSION file
-      copy:
-        content: "{{ docker_tarball_arch }}-{{ docker_tarball_release }}"
+      ansible.builtin.copy:
+        content: "{{ _installed_version }}"
         dest: /opt/docker/INSTALLED.VERSION
         mode: 0644
-  when: not _docker_installed_version.stat.exists
-        or ((_docker_installed_version_string.content | default('') | b64decode) != ('%s-%s' | format(docker_tarball_arch, docker_tarball_release)))
 
 - name: Create a /etc/containerd directory if it does not exist
   become: true
-  file:
+  ansible.builtin.file:
     path: /etc/containerd
     state: directory
     mode: 0755
 
 - name: Create /etc/containerd/config.toml file
   become: true
-  template:
+  ansible.builtin.template:
     dest: /etc/containerd/config.toml
     src: etc/containerd/config.toml.j2
     mode: 0644
   notify:
-    - systemctl restart-containerd
+    - Systemctl restart-containerd
 
 - name: Create containerd systemd service unit
   become: true
-  template:
+  ansible.builtin.template:
     dest: /etc/systemd/system/containerd.service
     src: etc/systemd/system/containerd.service.j2
     mode: 0644
   notify:
-    - systemctl daemon-reload
-    - systemctl restart-containerd
+    - Systemctl daemon-reload
+    - Systemctl restart-containerd
 
 - name: Create docker config files
   become: true
-  template:
+  ansible.builtin.template:
     dest: "/{{ item }}"
     src: "{{ item }}.j2"
     mode: 0644
   notify:
-    - systemctl daemon-reload
-    - systemctl restart-docker
+    - Systemctl daemon-reload
+    - Systemctl restart-docker
   loop:
     - etc/systemd/system/docker.service
     - etc/systemd/system/docker.socket
 
 - name: Ensure group "docker" exists
   become: true
-  group:
+  ansible.builtin.group:
     name: docker
     state: present
     system: true
 
 - name: Ensure executable permissions for tarball binaries
   become: true
-  file:
+  ansible.builtin.file:
     path: "/opt/docker/{{ item }}"
     mode: 0755
   loop: "{{ docker_tarball_binaries }}"
 
+- name: Ensure directroy /etc/bash_completion.d is exists
+  become: true
+  ansible.builtin.file:
+    path: /etc/bash_completion.d
+    state: directory
+    mode: 0755
+    owner: root
+    group: "0"
+  tags:
+    - configure
+
 - name: Ensure alternatives links is exists
   become: true
-  alternatives:
+  community.general.alternatives:
     name: "{{ item }}"
     link: "/usr/local/bin/{{ item }}"
     path: "/opt/docker/{{ item }}"
@@ -109,28 +126,32 @@
 
 - name: Download and install docker bash-completion
   become: true
+  when: docker_tarball_bash_completion_enabled
   block:
     - name: Download docker bash-completion
       become: false
       run_once: true
       no_log: true
-      get_url:
+      delegate_to: localhost
+      register: _download_docker_bash_completion
+      until: _download_docker_bash_completion is succeeded
+      retries: 15
+      delay: 1
+      ansible.builtin.get_url:
         url: "{{ docker_tarball_bash_completion_url }}"
         dest: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
         mode: 0644
         force: false
-      delegate_to: localhost
 
     - name: Copy docker bash-completion from ansible controller
       no_log: true
-      copy:
+      ansible.builtin.copy:
         src: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
         dest: /opt/docker/bash-completion
         mode: 0644
 
     - name: Ensure alternatives links is exists for docker bash-completion
-      alternatives:
+      community.general.alternatives:
         name: docker-bash-completion
         link: "{{ docker_bash_completion_path }}"
         path: /opt/docker/bash-completion
-  when: docker_tarball_bash_completion_enabled
