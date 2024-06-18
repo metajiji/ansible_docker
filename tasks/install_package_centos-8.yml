@@ -1,9 +1,12 @@
 ---
 
-- name: "Include {{ docker_installation_type }} tasks"
+- name: "Include tasks {{ docker_installation_type }}"
   ansible.builtin.include_tasks: install_package_redhat.yml
-  tags:
+  tags: &install-tags
     - install
+  args:
+    apply:
+      tags: *install-tags
 
 #
 # https://bugzilla.redhat.com/show_bug.cgi?id=1756473
@@ -16,7 +19,5 @@
     section: "{{ docker_package_repo_name }}"
     option: module_hotfixes
     value: "True"
-    mode: 0644
+    mode: "0644"
     no_extra_spaces: true
-  tags:
-    - install

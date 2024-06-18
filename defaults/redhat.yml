@@ -6,7 +6,7 @@ docker_package_repo_name: docker-ce-stable
 docker_package_packages:
   - "docker-ce-{{ docker_version }}"
   - "docker-ce-cli-{{ docker_version }}"
-  # - containerd.io
+  - "docker-compose-plugin-{{ docker_compose_release }}"
 
 docker_required_packages:
   - cronie

@@ -1,0 +1,25 @@
+---
+
+- name: Get current docker-compose version
+  changed_when: false
+  ansible.builtin.command: docker compose version --short
+  register: _docker_compose_info
+
+- name: Read /opt/docker/COMPOSE_INSTALLED.VERSION file
+  ansible.builtin.slurp:
+    src: /opt/docker/COMPOSE_INSTALLED.VERSION
+  register: _docker_compose_installed_version_string
+
+- name: Check docker-compose installed version
+  ansible.builtin.assert:
+    that:
+      - _installed_version == _from_config_version
+      - _installed_version == _runtime_version
+    fail_msg: |-
+      Desired docker-compose version: {{ _from_config_version }}
+      Installed version: {{ _installed_version }}
+      Current docker-compose version: {{ _runtime_version }}
+  vars:
+    _installed_version: "{{ _docker_compose_installed_version_string.content | default('') | b64decode }}"
+    _from_config_version: "{{ '%s-%s' | format(ansible_architecture, docker_compose_release) }}"
+    _runtime_version: "{{ '%s-%s' | format(ansible_architecture, _docker_compose_info.stdout) }}"

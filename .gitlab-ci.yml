@@ -1,13 +1,22 @@
 ---
+include:
+  - project: docker/include
+    ref: master
+    file:
+      - .buildkit_docker_service.yml
+
 stages:
   - test
 
 molecule:
   stage: test
   image: $CI_REGISTRY/docker/molecule
+  extends:
+    - .buildkit_docker_service
   script:
     - git config --global
       url."$(expr match "$CI_REPOSITORY_URL" '\(.\+://[^/]*\)')/".insteadOf
       "git@$(expr match "$CI_REPOSITORY_URL" '.\+://.\+@\([^/]*\)'):"
+    - test -f tox.ini && tox
     - molecule --version
     - molecule test

@@ -1,8 +1,14 @@
 ---
+dependency:
+  name: galaxy
+
+driver:
+  name: docker
+
 platforms:
   - &platform-basic
-    name: molecule-docker-fc37-package-${CI_JOB_ID:-1}
-    image: fedora:37
+    name: molecule-docker-fc40-package-${CI_JOB_ID:-1}
+    image: fedora:40
     volumes:
       - /var/lib/docker
       - /lib/modules:/lib/modules:ro
@@ -25,27 +31,15 @@ platforms:
       - docker_package
   - &platform-tarball
     <<: *platform-basic
-    name: molecule-docker-fc37-tarball-${CI_JOB_ID:-1}
+    name: molecule-docker-fc40-tarball-${CI_JOB_ID:-1}
     groups:
       - docker_tarball
   - <<: *platform-basic
-    name: molecule-docker-deb10-package-${CI_JOB_ID:-1}
-    image: debian:10
+    name: molecule-docker-deb12-package-${CI_JOB_ID:-1}
+    image: debian:12
   - <<: *platform-tarball
-    name: molecule-docker-deb10-tarball-${CI_JOB_ID:-1}
-    image: debian:10
-  - <<: *platform-basic
-    name: molecule-docker-deb11-package-${CI_JOB_ID:-1}
-    image: debian:11
-  - <<: *platform-tarball
-    name: molecule-docker-deb11-tarball-${CI_JOB_ID:-1}
-    image: debian:11
-  - <<: *platform-basic
-    name: molecule-docker-ubuntu20.04-package-${CI_JOB_ID:-1}
-    image: ubuntu:20.04
-  - <<: *platform-tarball
-    name: molecule-docker-ubuntu20.04-tarball-${CI_JOB_ID:-1}
-    image: ubuntu:20.04
+    name: molecule-docker-deb12-tarball-${CI_JOB_ID:-1}
+    image: debian:12
   - <<: *platform-basic
     name: molecule-docker-ubuntu22.04-package-${CI_JOB_ID:-1}
     image: ubuntu:22.04
@@ -63,25 +57,5 @@ provisioner:
       callbacks_enabled: profile_roles,profile_tasks,timer
     diff:
       always: true
-  inventory:
-    host_vars:
-      molecule-docker-deb11-package-${CI_JOB_ID:-1}:
-        # Minimum available version 20.10.6
-        docker_version: 20.10.18
-      molecule-docker-ubuntu22.04-package-${CI_JOB_ID:-1}:
-        # Minimum available version 20.10.13
-        docker_version: 20.10.18
-
 verifier:
   name: ansible
-
-dependency:
-  name: galaxy
-
-driver:
-  name: docker
-
-lint: |-
-  set -e
-  yamllint .
-  ansible-lint --force-color .

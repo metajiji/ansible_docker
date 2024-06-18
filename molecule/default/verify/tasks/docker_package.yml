@@ -11,6 +11,12 @@
       - _docker_client_version == docker_version
       - _docker_server_version in _docker_server_package_version
       - _docker_client_version in _docker_client_package_version
+    fail_msg: |-
+      Desired docker version: {{ docker_version }}
+      Installed server version: {{ _docker_server_package_version }}
+      Installed client version: {{ _docker_client_package_version }}
+      Docker server version: {{ _docker_server_version }}
+      Docker client version: {{ _docker_client_version }}
   vars:
     _runtime_versions: "{{ _docker_info.stdout | from_json }}"
     _docker_client_version: "{{ _runtime_versions.client }}"

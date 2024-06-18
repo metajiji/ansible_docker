@@ -1,0 +1,69 @@
+---
+
+- name: Add GPG public keys | {{ _distribution_string }}
+  become: true
+  register: _download_apt_gpg_keys
+  until: _download_apt_gpg_keys is succeeded
+  retries: 15
+  delay: 1
+  ansible.builtin.uri:
+    url: "{{ item.url }}"
+    dest: "{{ item.dest }}"
+    validate_certs: "{{ item.validate_certs | default(omit) }}"
+    use_proxy: false
+    mode: "0644"
+    owner: root
+    group: "0"
+    status_code:
+      - 200
+      - 304
+  loop: "{{ docker_package_gpg_keys }}"
+  loop_control:
+    label: "{{ item.dest }}"
+
+- name: Add repositories | {{ _distribution_string }}
+  become: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  ansible.builtin.apt_repository:
+    codename: "{{ item.codename | default(omit) }}"
+    filename: "{{ item.filename | default(omit) }}"
+    mode: "{{ item.mode | default('0644') }}"
+    repo: "{{ item.repo }}"
+    state: "{{ item.state | default(omit) }}"
+    update_cache: "{{ item.update_cache | default(omit) }}"
+    update_cache_retries: "{{ item.update_cache_retries | default(omit) }}"
+    update_cache_retry_max_delay: "{{ item.update_cache_retry_max_delay | default(omit) }}"
+    validate_certs: "{{ item.validate_certs | default(omit) }}"
+  loop: "{{ docker_package_enable_repositories }}"
+  loop_control:
+    label: "{{ item.filename }}"
+
+- name: Install docker packages | {{ _distribution_string }}
+  become: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  ansible.builtin.apt:
+    state: present
+    name: >-
+      {{
+        q('ansible.builtin.vars', 'docker_{docker_installation_type}_packages'.format(**vars), default=[])
+        | flatten
+      }}
+    update_cache: true
+    install_recommends: false
+    allow_downgrade: true
+    allow_change_held_packages: true
+
+- name: Prevent docker-ce package from being upgraded
+  become: true
+  changed_when: false
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop: >-
+    {{
+      docker_package_packages
+      | select('match', '^.+=.+$')
+      | map('regex_replace', '^.+:(.+)=.+$', '\1')
+      | map('regex_replace', '^(.+)=.+$', '\1')
+      | flatten
+    }}
