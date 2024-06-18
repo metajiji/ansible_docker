@@ -2,45 +2,55 @@
 
 - name: Include check tasks | {{ _distribution_string }}
   ansible.builtin.include_tasks: "check_{{ docker_installation_type }}.yml"
-  tags:
+  tags: &check-tags
     - check
     - install
+  args:
+    apply:
+      tags: *check-tags
 
 - name: Include install tasks | {{ _distribution_string }}
   ansible.builtin.include_tasks: "{{ lookup('first_found', _first_found_list) }}"
   vars:
     _first_found_list: >-
       {{ docker_first_found_list | map('regex_replace', '(.+)', 'install_\1.yml') | list }}
-  tags:
+  tags: &install-tags
     - install
+  args:
+    apply:
+      tags: *install-tags
 
 - name: Install docker-compose
   ansible.builtin.include_tasks: install_compose.yml
   when:
-    - docker_compose_install | bool
-  tags:
+    - docker_compose_install | bool and docker_installation_type == 'tarball'
+  tags: &docker-compose-tags
     - docker-compose
     - install
+  args:
+    apply:
+      tags: *docker-compose-tags
 
 - name: Ensure directroy /etc/docker is exists
   become: true
   ansible.builtin.file:
     path: /etc/docker
     state: directory
-    mode: 0700
+    mode: "0700"
     owner: root
-    group: root
+    group: "0"
   tags:
     - configure
 
 - name: Configure dockerd
   become: true
   ansible.builtin.copy:
-    content: "{{ docker_daemon_json | to_nice_json }}\n"
+    content: |
+      {{ docker_daemon_json | combine(docker_daemon_json_extra, recursive=True) | to_nice_json }}
     dest: /etc/docker/daemon.json
-    mode: 0644
+    mode: "0644"
     owner: root
-    group: root
+    group: "0"
   notify: Systemctl restart-docker
   tags:
     - configure
@@ -83,6 +93,8 @@
     user: root
     state: "{{ docker_cron_cleanup_enabled | ternary('present', 'absent') }}"
   loop: "{{ docker_cron_cleanup_env | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}={{ item.value }}"
   tags:
     - cron
 

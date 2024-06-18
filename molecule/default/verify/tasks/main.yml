@@ -31,6 +31,6 @@
 
 - name: Check docker-compose installed version
   ansible.builtin.include_tasks:
-    file: docker_compose.yml
+    file: "docker_compose_{{ docker_installation_type }}.yml"
   when:
-    - docker_compose_install | bool
+    - docker_compose_install | bool or docker_installation_type == 'package'

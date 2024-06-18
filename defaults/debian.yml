@@ -15,9 +15,7 @@ docker_package_enable_repositories:
 docker_package_packages:
   - "docker-ce=5:{{ docker_version }}*"
   - "docker-ce-cli=5:{{ docker_version }}*"
-  # - docker-ce=5:{{ docker_version }}~3-0~{{ ansible_distribution | lower }}-{{ ansible_distribution_release|lower }}
-  # - docker-ce-cli=5:{{ docker_version }}~3-0~{{ ansible_distribution | lower }}-{{ ansible_distribution_release|lower }}
-  # - containerd.io
+  - "docker-compose-plugin={{ docker_compose_release }}-1*"
 
 docker_required_packages:
   - cron

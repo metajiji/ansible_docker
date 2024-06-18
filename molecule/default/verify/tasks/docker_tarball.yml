@@ -1,16 +1,5 @@
 ---
 
-- name: Get current docker version
-  changed_when: false
-  ansible.builtin.command: >-
-    {%- raw -%}
-    docker version -f
-    '{
-      "client": "{{.Client.Version}}",
-      "server": "{{.Server.Version}}"
-    }'{%- endraw -%}
-  register: _docker_info
-
 - name: Read /opt/docker/INSTALLED.VERSION file
   ansible.builtin.slurp:
     src: /opt/docker/INSTALLED.VERSION
@@ -21,10 +10,15 @@
     that:
       - _installed_version == _from_config_version
       - _installed_version == _docker_server_version
-      - docker_version == _docker_client_version
+      - _installed_version == _docker_client_version
+    fail_msg: |-
+      Desired docker version: {{ _from_config_version }}
+      Installed version: {{ _installed_version }}
+      Docker server version: {{ _docker_server_version }}
+      Docker client version: {{ _docker_client_version }}
   vars:
     _installed_version: "{{ docker_installed_version_string.content | default('') | b64decode }}"
     _from_config_version: "{{ docker_tarball_arch }}-{{ docker_tarball_release }}"
     _runtime_versions: "{{ _docker_info.stdout | from_json }}"
-    _docker_client_version: "{{ _runtime_versions.client }}"
+    _docker_client_version: "{{ docker_tarball_arch }}-{{ _runtime_versions.client }}"
     _docker_server_version: "{{ docker_tarball_arch }}-{{ _runtime_versions.server }}"
