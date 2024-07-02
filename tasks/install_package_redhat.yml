@@ -16,6 +16,9 @@
     status_code:
       - 200
       - 304
+  tags:
+    - install
+    - install-docker
 
 - name: "Enable repo {{ docker_package_repo_name }}"
   become: true
@@ -26,6 +29,9 @@
     value: "True"
     mode: "0644"
     no_extra_spaces: true
+  tags:
+    - install
+    - install-docker
 
 - name: Unhold docker packages for {{ docker_package_repo_name }}
   become: true
@@ -36,12 +42,18 @@
     option: exclude
     state: absent
     mode: "0644"
+  tags:
+    - install
+    - install-docker
 
 - name: Install docker packages
   become: true
   ansible.builtin.dnf:
     name: "{{ docker_package_packages }}"
     state: present
+  tags:
+    - install
+    - install-docker
 
 - name: Hold docker packages for {{ docker_package_repo_name }}
   become: true
@@ -57,3 +69,6 @@
     _hold_packages:
       - docker-ce
       - docker-ce-cli
+  tags:
+    - install
+    - install-docker

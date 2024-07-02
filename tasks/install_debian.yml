@@ -13,6 +13,9 @@
       {{ q('ansible.builtin.vars', 'docker_{docker_installation_type}_required_packages'.format(**vars), default=[]) }}
     _required_packages: >-
       {{ docker_required_packages_extra | union(*_installation_type_required_packages) }}
+  tags:
+    - install
+    - install-docker
 
 - name: Install packages | {{ _distribution_string }}
   become: true
@@ -23,10 +26,11 @@
     update_cache: true
     install_recommends: false
   vars:
-    _tarball_bash_completion_packages: >-
-      {{ docker_tarball_bash_completion_enabled | ternary(docker_tarball_bash_completion_packages, []) }}
     _packages: >-
-      {{ docker_packages_extra | union(_tarball_bash_completion_packages) }}
+      {{ docker_packages_extra }}
+  tags:
+    - install
+    - install-docker
 
 - name: "Include tasks {{ docker_installation_type }}"
   ansible.builtin.include_tasks: "{{ _filename }}"
@@ -37,8 +41,6 @@
       {{ docker_first_found_list | map('regex_replace', '(.+)', _filename_format) | list }}
   when:
     - _filename is exists
-  tags: &install-tags
+  tags:
     - install
-  args:
-    apply:
-      tags: *install-tags
+    - install-docker

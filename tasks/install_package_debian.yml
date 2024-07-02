@@ -20,6 +20,9 @@
   loop: "{{ docker_package_gpg_keys }}"
   loop_control:
     label: "{{ item.dest }}"
+  tags:
+    - install
+    - install-docker
 
 - name: Add repositories | {{ _distribution_string }}
   become: true
@@ -37,6 +40,9 @@
   loop: "{{ docker_package_enable_repositories }}"
   loop_control:
     label: "{{ item.filename }}"
+  tags:
+    - install
+    - install-docker
 
 - name: Install docker packages | {{ _distribution_string }}
   become: true
@@ -52,6 +58,9 @@
     install_recommends: false
     allow_downgrade: true
     allow_change_held_packages: true
+  tags:
+    - install
+    - install-docker
 
 - name: Prevent docker-ce package from being upgraded
   become: true
@@ -67,3 +76,6 @@
       | map('regex_replace', '^(.+)=.+$', '\1')
       | flatten
     }}
+  tags:
+    - install
+    - install-docker

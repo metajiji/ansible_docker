@@ -2,34 +2,31 @@
 
 - name: Include check tasks | {{ _distribution_string }}
   ansible.builtin.include_tasks: "check_{{ docker_installation_type }}.yml"
-  tags: &check-tags
+  tags:
     - check
     - install
-  args:
-    apply:
-      tags: *check-tags
+    - install-docker
 
 - name: Include install tasks | {{ _distribution_string }}
   ansible.builtin.include_tasks: "{{ lookup('first_found', _first_found_list) }}"
   vars:
     _first_found_list: >-
       {{ docker_first_found_list | map('regex_replace', '(.+)', 'install_\1.yml') | list }}
-  tags: &install-tags
+  tags:
     - install
-  args:
-    apply:
-      tags: *install-tags
+    - install-docker
+    - tarball-docker-download
+    - tarball-download
 
-- name: Install docker-compose
+- name: Include install docker-compose tasks
   ansible.builtin.include_tasks: install_compose.yml
   when:
     - docker_compose_install | bool and docker_installation_type == 'tarball'
-  tags: &docker-compose-tags
-    - docker-compose
+  tags:
     - install
-  args:
-    apply:
-      tags: *docker-compose-tags
+    - install-docker-compose
+    - tarball-docker-compose-download
+    - tarball-download
 
 - name: Ensure directroy /etc/docker is exists
   become: true
@@ -41,6 +38,8 @@
     group: "0"
   tags:
     - configure
+    - install
+    - install-docker
 
 - name: Configure dockerd
   become: true
@@ -54,6 +53,8 @@
   notify: Systemctl restart-docker
   tags:
     - configure
+    - install
+    - install-docker
 
 - name: Get docker version from socket
   become: true
@@ -67,6 +68,9 @@
     status_code:
       - 200
       - -1  # When no socket file or unable connect
+  tags:
+    - install
+    - install-docker
 
 - name: Ensure docker is started and enabled at boot or restart when runtime version mismatch
   become: true
@@ -83,8 +87,11 @@
         | first | default([])
       }}
     _engine_version: "{{ _engine_version_json.Version | default('unknown') }}"
+  tags:
+    - install
+    - install-docker
 
-- name: Add env variables for cleunup docker images cron job
+- name: Add env variables for cleanup docker images cron job
   ansible.builtin.cron:
     env: true
     name: "{{ item.key }}"
@@ -97,10 +104,12 @@
     label: "{{ item.key }}={{ item.value }}"
   tags:
     - cron
+    - install
+    - install-docker
 
-- name: Add cleunup docker images cron job
+- name: Add cleanup docker images cron job
   ansible.builtin.cron:
-    name: cleunup cron job
+    name: cleanup cron job
     cron_file: docker_cleaup_images
     user: root
     hour: "{{ docker_cron_cleanup_hour | string }}"
@@ -109,3 +118,5 @@
     state: "{{ docker_cron_cleanup_enabled | ternary('present', 'absent') }}"
   tags:
     - cron
+    - install
+    - install-docker

@@ -1,10 +1,4 @@
 ---
-dependency:
-  name: galaxy
-
-driver:
-  name: docker
-
 platforms:
   - &platform-basic
     name: molecule-docker-fc40-package-${CI_JOB_ID:-1}
@@ -41,11 +35,11 @@ platforms:
     name: molecule-docker-deb12-tarball-${CI_JOB_ID:-1}
     image: debian:12
   - <<: *platform-basic
-    name: molecule-docker-ubuntu22.04-package-${CI_JOB_ID:-1}
-    image: ubuntu:22.04
+    name: molecule-docker-ubuntu24.04-package-${CI_JOB_ID:-1}
+    image: ubuntu:24.04
   - <<: *platform-tarball
-    name: molecule-docker-ubuntu22.04-tarball-${CI_JOB_ID:-1}
-    image: ubuntu:22.04
+    name: molecule-docker-ubuntu24.04-tarball-${CI_JOB_ID:-1}
+    image: ubuntu:24.04
 
 provisioner:
   name: ansible
@@ -57,5 +51,12 @@ provisioner:
       callbacks_enabled: profile_roles,profile_tasks,timer
     diff:
       always: true
+
 verifier:
   name: ansible
+
+dependency:
+  name: galaxy
+
+driver:
+  name: docker

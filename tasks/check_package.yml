@@ -4,9 +4,17 @@
   ansible.builtin.stat:
     path: /opt/docker/INSTALLED.VERSION
   register: _docker_installed_version
+  tags:
+    - check
+    - install
+    - install-docker
 
 - name: Check docker is installed from tarball
   ansible.builtin.assert:
     that:
       - not _docker_installed_version.stat.exists
     fail_msg: Detected docker installed from tarball, cannot proceed!
+  tags:
+    - check
+    - install
+    - install-docker
