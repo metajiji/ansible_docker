@@ -4,12 +4,7 @@
 extends: default
 
 ignore: |
-  .direnv/
   .git/
-  .venv/
-  collections/
-  roles/
-  venv/
 
 rules:
   comments:

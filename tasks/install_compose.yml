@@ -5,6 +5,9 @@
   ansible.builtin.package:
     name: "{{ docker_compose_required_packages }}"
     state: present
+  tags:
+    - install
+    - install-docker-compose
 
 - name: Download docker-compose static binary
   become: false
@@ -22,6 +25,11 @@
     status_code:
       - 200
       - 304
+  tags:
+    - install
+    - install-docker-compose
+    - tarball-docker-compose-download
+    - tarball-download
 
 - name: Create a directory for docker if it does not exist
   become: true
@@ -31,17 +39,26 @@
     mode: "0755"
     owner: root
     group: "0"
+  tags:
+    - install
+    - install-docker-compose
 
 - name: Check docker-compose installed version
   ansible.builtin.stat:
     path: /opt/docker/COMPOSE_INSTALLED.VERSION
   register: _docker_compose_installed_version
+  tags:
+    - install
+    - install-docker-compose
 
 - name: Read /opt/docker/COMPOSE_INSTALLED.VERSION file
   ansible.builtin.slurp:
     src: /opt/docker/COMPOSE_INSTALLED.VERSION
   register: _docker_compose_installed_version_string
   when: _docker_compose_installed_version.stat.exists
+  tags:
+    - install
+    - install-docker-compose
 
 - name: Install docker-compose
   when: >-
@@ -58,6 +75,9 @@
         mode: "0755"
         owner: root
         group: "0"
+      tags:
+        - install
+        - install-docker-compose
     - name: Ensure alternatives links is exists for docker-compose
       become: true
       community.general.alternatives:
@@ -65,6 +85,9 @@
         link: /usr/local/bin/docker-compose
         path: /opt/docker/docker-compose
         state: "{{ (docker_compose_install | bool) | ternary('present', 'absent') }}"
+      tags:
+        - install
+        - install-docker-compose
     - name: Create a directory for docker cli-plugins if it does not exist
       become: true
       ansible.builtin.file:
@@ -75,6 +98,9 @@
         group: "0"
       when:
         - docker_compose_plugin_install | bool
+      tags:
+        - install
+        - install-docker-compose
     - name: Ensure alternatives links is exists for docker compose plugin
       become: true
       community.general.alternatives:
@@ -82,6 +108,9 @@
         link: /usr/local/lib/docker/cli-plugins/docker-compose
         path: /opt/docker/docker-compose
         state: "{{ (docker_compose_plugin_install | bool) | ternary('present', 'absent') }}"
+      tags:
+        - install
+        - install-docker-compose
     - name: Save /opt/docker/COMPOSE_INSTALLED.VERSION file
       become: true
       ansible.builtin.copy:
@@ -90,3 +119,6 @@
         mode: "0644"
         owner: root
         group: "0"
+      tags:
+        - install
+        - install-docker-compose

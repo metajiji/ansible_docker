@@ -16,6 +16,11 @@
     status_code:
       - 200
       - 304
+  tags:
+    - install
+    - install-docker
+    - tarball-docker-download
+    - tarball-download
 
 - name: Create a directory for docker if it does not exist
   become: true
@@ -25,17 +30,26 @@
     mode: "0755"
     owner: root
     group: "0"
+  tags:
+    - install
+    - install-docker
 
 - name: Check installed version
   ansible.builtin.stat:
     path: /opt/docker/INSTALLED.VERSION
   register: _docker_installed_version
+  tags:
+    - install
+    - install-docker
 
 - name: Read /opt/docker/INSTALLED.VERSION file
   ansible.builtin.slurp:
     src: /opt/docker/INSTALLED.VERSION
   register: _docker_installed_version_string
   when: _docker_installed_version.stat.exists
+  tags:
+    - install
+    - install-docker
 
 - name: Download and install docker
   become: true
@@ -51,12 +65,18 @@
         mode: "0644"
         extra_opts:
           - --strip-components=1
+      tags:
+        - install
+        - install-docker
 
     - name: Save /opt/docker/INSTALLED.VERSION file
       ansible.builtin.copy:
         content: "{{ _installed_version }}"
         dest: /opt/docker/INSTALLED.VERSION
         mode: "0644"
+      tags:
+        - install
+        - install-docker
 
 - name: Create a /etc/containerd directory if it does not exist
   become: true
@@ -66,6 +86,9 @@
     mode: "0755"
     owner: root
     group: "0"
+  tags:
+    - install
+    - install-docker
 
 - name: Create /etc/containerd/config.toml file
   become: true
@@ -75,6 +98,9 @@
     mode: "0644"
   notify:
     - Systemctl restart-containerd
+  tags:
+    - install
+    - install-docker
 
 - name: Create containerd systemd service unit
   become: true
@@ -85,6 +111,9 @@
   notify:
     - Systemctl daemon-reload
     - Systemctl restart-containerd
+  tags:
+    - install
+    - install-docker
 
 - name: Create docker config files
   become: true
@@ -98,6 +127,9 @@
   loop:
     - etc/systemd/system/docker.service
     - etc/systemd/system/docker.socket
+  tags:
+    - install
+    - install-docker
 
 - name: Ensure group "docker" exists
   become: true
@@ -105,6 +137,9 @@
     name: docker
     state: present
     system: true
+  tags:
+    - install
+    - install-docker
 
 - name: Ensure executable permissions for tarball binaries
   become: true
@@ -114,15 +149,9 @@
     owner: root
     group: "0"
   loop: "{{ docker_tarball_binaries }}"
-
-- name: Ensure directroy /etc/bash_completion.d is exists
-  become: true
-  ansible.builtin.file:
-    path: /etc/bash_completion.d
-    state: directory
-    mode: "0755"
-    owner: root
-    group: "0"
+  tags:
+    - install
+    - install-docker
 
 - name: Ensure alternatives links is exists
   become: true
@@ -131,39 +160,6 @@
     link: "/usr/local/bin/{{ item }}"
     path: "/opt/docker/{{ item }}"
   loop: "{{ docker_tarball_binaries }}"
-
-- name: Download and install docker bash-completion
-  become: true
-  when: docker_tarball_bash_completion_enabled
-  block:
-    - name: Download docker bash-completion
-      become: false
-      run_once: true
-      diff: false
-      delegate_to: localhost
-      register: _download_docker_bash_completion
-      until: _download_docker_bash_completion is succeeded
-      retries: 15
-      delay: 1
-      ansible.builtin.uri:
-        url: "{{ docker_tarball_bash_completion_url }}"
-        dest: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
-        creates: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
-        mode: "0644"
-        force: false
-        status_code:
-          - 200
-          - 304
-
-    - name: Copy docker bash-completion from ansible controller
-      diff: false
-      ansible.builtin.copy:
-        src: "{{ playbook_dir }}/files/bash-completion-{{ docker_tarball_release }}"
-        dest: /opt/docker/bash-completion
-        mode: "0644"
-
-    - name: Ensure alternatives links is exists for docker bash-completion
-      community.general.alternatives:
-        name: docker-bash-completion
-        link: "{{ docker_bash_completion_path }}"
-        path: /opt/docker/bash-completion
+  tags:
+    - install
+    - install-docker

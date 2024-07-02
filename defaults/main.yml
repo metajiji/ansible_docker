@@ -12,13 +12,6 @@ docker_tarball_arch: x86_64
 docker_tarball_url: >-
   https://download.docker.com/linux/static/stable/{{ docker_tarball_arch }}/docker-{{ docker_tarball_release }}.tgz
 
-docker_tarball_bash_completion_enabled: true
-docker_tarball_bash_completion_url: >-
-  https://github.com/docker/cli/raw/v{{ docker_tarball_release }}/contrib/completion/bash/docker
-docker_bash_completion_path: /etc/bash_completion.d/docker
-docker_tarball_bash_completion_packages:
-  - bash-completion
-
 # Will be symlinked from /opt/docker/ to /usr/local/bin/
 docker_tarball_binaries:
   - containerd
@@ -91,7 +84,7 @@ docker_daemon_json_extra: {}
 
 docker_compose_install: true
 docker_compose_plugin_install: true
-docker_compose_release: 2.27.0
+docker_compose_release: 2.28.1
 docker_compose_arch: "{{ docker_tarball_arch }}"
 # yamllint disable-line rule:line-length
 docker_compose_url: "https://github.com/docker/compose/releases/download/v{{ docker_compose_release }}/docker-compose-linux-{{ docker_compose_arch }}"

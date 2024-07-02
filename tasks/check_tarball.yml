@@ -6,10 +6,18 @@
     name: python3-apt
   when:
     - ansible_os_family | lower == 'debian'
+  tags:
+    - check
+    - install
+    - install-docker
 
 - name: Gather the package facts
   ansible.builtin.package_facts:
     manager: auto
+  tags:
+    - check
+    - install
+    - install-docker
 
 - name: Check any docker package is installed
   ansible.builtin.assert:
@@ -21,3 +29,7 @@
     _docker_packages:
       - docker-ce
       - docker-ce-cli
+  tags:
+    - check
+    - install
+    - install-docker
